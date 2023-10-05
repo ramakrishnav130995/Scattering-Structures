@@ -1,2 +1,3 @@
 numpy
 poisson-disc
+matplotlib
