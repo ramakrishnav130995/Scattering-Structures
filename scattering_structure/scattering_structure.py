@@ -95,9 +95,9 @@ class ScatteringStructure:
             points = []
             # the loop is done until it fails
             # only later the solution with the closest to target_rms is picked
-            target_rms = self.arrangement['target_rms']
+            target_mom = self.arrangement['target_mom']
             best_points = []
-            best_rms = 0
+            best_mom = 0
             i = 0
             while i < 20:
                 # create random point in given range
@@ -117,11 +117,11 @@ class ScatteringStructure:
                     i = 0
                     points.append((x, y))
                     # test if this is the best solution until now
-                    current_rms = self.rms(points)
-                    print('RMS', current_rms)
-                    if abs(current_rms-target_rms) < abs(best_rms-target_rms):
-                        print('RMS IMPROVED')
-                        best_rms = current_rms
+                    current_mom = self.measure_of_merit(points)
+                    print(self.arrangement['measure_of_merit'], current_mom)
+                    if abs(current_mom-target_mom) < abs(best_mom-target_mom):
+                        print('IMPROVED!')
+                        best_mom = current_mom
                         best_points = points
             return np.array(best_points)
 
@@ -132,7 +132,7 @@ class ScatteringStructure:
 
         # generate point pattern via Bridson's poisson sampling algorithm
         # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-        points = poisson_disc.Bridson_sampling(radius=3 * self.scatterer_radius, dims=np.array([max_x, max_y]))
+        points = poisson_disc.Bridson_sampling(radius=5 * self.scatterer_radius, dims=np.array([max_x, max_y]))
 
         return points
 
@@ -172,6 +172,21 @@ class ScatteringStructure:
 
             return outer_sum
 
+    def density(self, points=None):
+        max_x = self.geometry['lx']
+        max_y = self.geometry['ly']
+        # use class-set distribution of points
+        if points is None:
+            p = self.points
+        # otherwise use given
+        else:
+            p = points
+
+        # compute density
+        density = (len(points)*np.pi*self.scatterer_radius**2)/(max_x*max_y)
+
+        return density
+
     def plot_distribution(self):
         # Unzip data into x and y
         x, y = zip(*self.points)
@@ -186,6 +201,22 @@ class ScatteringStructure:
 
         # Display the plot
         plt.show()
+
+    def measure_of_merit(self, points=None):
+        # use class-set distribution of points
+        if points is None:
+            p = self.points
+        # otherwise use given
+        else:
+            p = points
+        # compute rms
+        n = len(p)
+        if self.arrangement['measure_of_merit'] == 'rms':
+            return self.rms(p)
+        elif self.arrangement['measure_of_merit'] == 'density':
+            return self.density(p)
+        else:
+            raise TypeError('The given measure of merit', self.arrangement['measure_of_merit'], 'is not supported')
 
     def plot_scatterer(self):
         pass
