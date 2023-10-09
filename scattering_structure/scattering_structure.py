@@ -118,9 +118,9 @@ class ScatteringStructure:
                     points.append((x, y))
                     # test if this is the best solution until now
                     current_mom = self.measure_of_merit(points)
-                    print(self.arrangement['measure_of_merit'], "=", current_mom)
+                    # print(self.arrangement['measure_of_merit'], "=", current_mom)
                     if abs(current_mom-target_mom) < abs(best_mom-target_mom):
-                        print('IMPROVED!')
+                        # print('IMPROVED!')
                         best_mom = current_mom
                         best_points = points
             return np.array(best_points)
@@ -142,11 +142,11 @@ class ScatteringStructure:
             rng = (8-2)*self.scatterer_radius
             middle = 5*self.scatterer_radius
             for i in range(4):
-                print(i)
+                # print(i)
                 # get the pattern closest to target mom in initial range
                 pattern, middle = self.poisson_pattern_optimisation(start=middle - 0.5*rng,
                                                                     stop=middle + 0.5*rng,
-                                                                    n=5)
+                                                                    n=10)
                 # cut the range by half
                 rng *= 0.5
 
@@ -164,7 +164,7 @@ class ScatteringStructure:
         best_radius = 0
         # compute a pattern for each radius
         for r in radii:
-            print(r)
+            # print(r)
             pattern = poisson_disc.Bridson_sampling(radius=r, dims=np.array([max_x, max_y]))
             current_mom = self.measure_of_merit(pattern)
             # check if measure of merit has improved
