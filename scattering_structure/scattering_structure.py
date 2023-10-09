@@ -90,7 +90,7 @@ class ScatteringStructure:
                 if valid:
                     points.append((x, y))
             return np.array(points)
-        # otherwise a point is added until the target RMS is hit
+        # otherwise a point is added until the target MOM is hit
         else:
             points = []
             # the loop is done until it fails
@@ -99,7 +99,7 @@ class ScatteringStructure:
             best_points = []
             best_mom = 0
             i = 0
-            while i < 20:
+            while i < 100:
                 # create random point in given range
                 x = np.random.uniform(0 + self.scatterer_radius, max_x - self.scatterer_radius)
                 y = np.random.uniform(0 + self.scatterer_radius, max_y - self.scatterer_radius)
@@ -118,7 +118,7 @@ class ScatteringStructure:
                     points.append((x, y))
                     # test if this is the best solution until now
                     current_mom = self.measure_of_merit(points)
-                    print(self.arrangement['measure_of_merit'], current_mom)
+                    print(self.arrangement['measure_of_merit'], "=", current_mom)
                     if abs(current_mom-target_mom) < abs(best_mom-target_mom):
                         print('IMPROVED!')
                         best_mom = current_mom
@@ -126,15 +126,55 @@ class ScatteringStructure:
             return np.array(best_points)
 
     def create_poisson_disc_sampling_pattern(self):
-        # TODO implement optimization
         max_x = self.geometry['lx']
         max_y = self.geometry['ly']
+        # if the structure should just be plainly instanced
+        if not self.arrangement['optimization']:
+            # generate point pattern via Bridson's poisson sampling algorithm
+            # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
+            points = poisson_disc.Bridson_sampling(radius=self.arrangement['poisson_radius'], dims=np.array([max_x, max_y]))
 
-        # generate point pattern via Bridson's poisson sampling algorithm
-        # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-        points = poisson_disc.Bridson_sampling(radius=5 * self.scatterer_radius, dims=np.array([max_x, max_y]))
+            return points
 
-        return points
+        # otherwise a point is added until the target MOM is hit
+        else:
+            # define a initial radius range
+            rng = (8-2)*self.scatterer_radius
+            middle = 5*self.scatterer_radius
+            for i in range(4):
+                print(i)
+                # get the pattern closest to target mom in initial range
+                pattern, middle = self.poisson_pattern_optimisation(start=middle - 0.5*rng,
+                                                                    stop=middle + 0.5*rng,
+                                                                    n=5)
+                # cut the range by half
+                rng *= 0.5
+
+            return pattern
+
+    def poisson_pattern_optimisation(self, start, stop, n):
+        # initialize
+        max_x = self.geometry['lx']
+        max_y = self.geometry['ly']
+        step = (stop - start)/n
+        radii = np.arange(start=start, stop=stop, step=step)
+        best_mom = 0
+        target_mom = self.arrangement['target_mom']
+        best_pattern = []
+        best_radius = 0
+        # compute a pattern for each radius
+        for r in radii:
+            print(r)
+            pattern = poisson_disc.Bridson_sampling(radius=r, dims=np.array([max_x, max_y]))
+            current_mom = self.measure_of_merit(pattern)
+            # check if measure of merit has improved
+            if abs(current_mom - target_mom) < abs(best_mom - target_mom):
+                best_mom = current_mom
+                best_pattern = pattern
+                best_radius = r
+
+        return best_pattern, best_radius
+
 
     # ---------------------------------------
     # REDUCE TO SPECIFIC GEOMETRIES
@@ -183,7 +223,7 @@ class ScatteringStructure:
             p = points
 
         # compute density
-        density = (len(points)*np.pi*self.scatterer_radius**2)/(max_x*max_y)
+        density = (len(p)*np.pi*self.scatterer_radius**2)/(max_x*max_y)
 
         return density
 
