@@ -25,7 +25,13 @@ class ScatteringStructure:
             raise TypeError(f'The given arrangement type {self.arrangement} is not supported')
 
         # reduce arrangement from box to fill a pizza slice or circle
-        # TODO
+        self.reduced_points = None
+        if geometry['type'] == 'box':
+            self.reduced_points = self.points
+        elif geometry['type'] == 'circle':
+            self.reduced_points = self.reduce_to_circle()
+        else:
+            raise TypeError(f'The given geometry type {geometry['type']} is not supported')
 
     # ---------------------------------------
     # DIFFERENT SCATTERER DISTRIBUTIONS
@@ -141,12 +147,12 @@ class ScatteringStructure:
             # define a initial radius range
             rng = (8-2)*self.scatterer_radius
             middle = 5*self.scatterer_radius
-            for i in range(4):
+            for i in range(self.arrangement['optimization_outer_n']):
                 # print(i)
                 # get the pattern closest to target mom in initial range
                 pattern, middle = self.poisson_pattern_optimisation(start=middle - 0.5*rng,
                                                                     stop=middle + 0.5*rng,
-                                                                    n=10)
+                                                                    n=self.arrangement['optimization_inner_n'])
                 # cut the range by half
                 rng *= 0.5
 
@@ -175,13 +181,40 @@ class ScatteringStructure:
 
         return best_pattern, best_radius
 
-
     # ---------------------------------------
     # REDUCE TO SPECIFIC GEOMETRIES
     # ---------------------------------------
 
     def reduce_to_circle(self):
-        pass
+        circle_radius = self.geometry['circle_radius']
+        lx = self.geometry['lx']
+        ly = self.geometry['ly']
+
+        # Calculate the coordinates of the center of the circle
+        center_x = lx / 2
+        center_y = ly / 2
+
+        # Create a list to store the filtered and transformed points
+        new_points = []
+
+        # Calculate the square of the circle radius for faster comparison
+        circle_radius_squared = circle_radius ** 2
+
+        # Iterate through the original points
+        for x, y in self.points:
+            # Calculate the squared distance from the point to the center of the circle
+            distance_squared = (x - center_x) ** 2 + (y - center_y) ** 2
+
+            # Check if the squared distance is less than or equal to the squared circle radius
+            if distance_squared <= circle_radius_squared:
+                # Transform the point to have the center of the circle at (0, 0)
+                transformed_x = x - center_x
+                transformed_y = y - center_y
+
+                # Append the transformed point to the new_points list
+                new_points.append((transformed_x, transformed_y))
+
+        return new_points
 
     def reduce_to_pizza_slice(self):
         pass
@@ -189,6 +222,22 @@ class ScatteringStructure:
     # ---------------------------------------
     # OTHER FUNCTIONS
     # ---------------------------------------
+
+    def measure_of_merit(self, points=None):
+        # use class-set distribution of points
+        if points is None:
+            p = self.points
+        # otherwise use given
+        else:
+            p = points
+        # compute rms
+        n = len(p)
+        if self.arrangement['measure_of_merit'] == 'rms':
+            return self.rms(p)
+        elif self.arrangement['measure_of_merit'] == 'density':
+            return self.density(p)
+        else:
+            raise TypeError('The given measure of merit', self.arrangement['measure_of_merit'], 'is not supported')
 
     def rms(self, points=None):
         # use class-set distribution of points
@@ -242,24 +291,56 @@ class ScatteringStructure:
         # Display the plot
         plt.show()
 
-    def measure_of_merit(self, points=None):
-        # use class-set distribution of points
-        if points is None:
-            p = self.points
-        # otherwise use given
-        else:
-            p = points
-        # compute rms
-        n = len(p)
-        if self.arrangement['measure_of_merit'] == 'rms':
-            return self.rms(p)
-        elif self.arrangement['measure_of_merit'] == 'density':
-            return self.density(p)
-        else:
-            raise TypeError('The given measure of merit', self.arrangement['measure_of_merit'], 'is not supported')
+    def plot_device(self):
+        # Unzip reduced points into x and y
+        x, y = zip(*self.reduced_points)
 
-    def plot_scatterer(self):
-        pass
+        # Create a scatter plot of reduced points
+        plt.scatter(x, y, s=np.pi * self.scatterer_radius ** 2)
 
-    def save_distribution(self):
-        pass
+        # Plot the circle
+        circle_radius = self.geometry['circle_radius']
+        circle = plt.Circle((0, 0), circle_radius, color='r', fill=False, label=f'Circle r = {self.geometry['circle_radius']} μm')
+        plt.gca().add_patch(circle)
+
+        # Set aspect ratio to equal
+        plt.gca().set_aspect('equal')
+        plt.xlabel('μm')
+        plt.ylabel('μm')
+
+        # Add a legend
+        plt.legend()
+
+        # Display the plot
+        plt.show()
+
+    def save_distribution(self, filepath):
+        try:
+            with open(filepath, 'w') as file:
+                for x, y in self.points:
+                    file.write(f"{x}\t{y}\n")
+            print(f"Distribution saved to {filepath}")
+        except Exception as e:
+            print(f"Error saving distribution: {str(e)}")
+
+    def save_device(self, filepath):
+        try:
+            with open(filepath, 'w') as file:
+                for x, y in self.reduced_points:
+                    file.write(f"{x}\t{y}\n")
+            print(f"Distribution saved to {filepath}")
+        except Exception as e:
+            print(f"Error saving distribution: {str(e)}")
+
+    def load(self, filepath):
+        try:
+            points = []
+            with open(filepath, 'r') as file:
+                for line in file:
+                    x, y = map(float, line.strip().split('\t'))
+                    points.append((x, y))
+            print(f"Distribution loaded from {filepath}")
+            return points
+        except Exception as e:
+            print(f"Error loading distribution: {str(e)}")
+            return None
