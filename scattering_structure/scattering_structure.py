@@ -21,6 +21,8 @@ class ScatteringStructure:
             self.points = self.create_random_pattern()
         elif arrangement['type'] == 'poisson_disc':
             self.points = self.create_poisson_disc_sampling_pattern()
+        elif arrangement['type'] == 'load_from_file':
+            self.points = self.load(arrangement['filepath'])
         else:
             raise TypeError(f'The given arrangement type {self.arrangement} is not supported')
 
@@ -29,7 +31,9 @@ class ScatteringStructure:
         if geometry['type'] == 'box':
             self.reduced_points = self.points
         elif geometry['type'] == 'circle':
-            self.reduced_points = self.reduce_to_circle()
+            self.reduced_points = self._reduce_to_circle()
+        elif geometry['type'] == 'load_from_file':
+            self.reduced_points = self.points  # since the arrangement is already reduced
         else:
             raise TypeError(f'The given geometry type {geometry['type']} is not supported')
 
@@ -123,9 +127,9 @@ class ScatteringStructure:
                     i = 0
                     points.append((x, y))
                     # test if this is the best solution until now
-                    current_mom = self.measure_of_merit(points)
+                    current_mom = self._measure_of_merit(points)
                     # print(self.arrangement['measure_of_merit'], "=", current_mom)
-                    if abs(current_mom-target_mom) < abs(best_mom-target_mom):
+                    if abs(current_mom - target_mom) < abs(best_mom - target_mom):
                         # print('IMPROVED!')
                         best_mom = current_mom
                         best_points = points
@@ -138,31 +142,32 @@ class ScatteringStructure:
         if not self.arrangement['optimization']:
             # generate point pattern via Bridson's poisson sampling algorithm
             # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-            points = poisson_disc.Bridson_sampling(radius=self.arrangement['poisson_radius'], dims=np.array([max_x, max_y]))
+            points = poisson_disc.Bridson_sampling(radius=self.arrangement['poisson_radius'],
+                                                   dims=np.array([max_x, max_y]))
 
             return points
 
         # otherwise a point is added until the target MOM is hit
         else:
             # define a initial radius range
-            rng = (8-2)*self.scatterer_radius
-            middle = 5*self.scatterer_radius
+            rng = (8 - 2) * self.scatterer_radius
+            middle = 5 * self.scatterer_radius
             for i in range(self.arrangement['optimization_outer_n']):
                 # print(i)
                 # get the pattern closest to target mom in initial range
-                pattern, middle = self.poisson_pattern_optimisation(start=middle - 0.5*rng,
-                                                                    stop=middle + 0.5*rng,
-                                                                    n=self.arrangement['optimization_inner_n'])
+                pattern, middle = self._poisson_pattern_optimisation(start=middle - 0.5 * rng,
+                                                                     stop=middle + 0.5 * rng,
+                                                                     n=self.arrangement['optimization_inner_n'])
                 # cut the range by half
                 rng *= 0.5
 
             return pattern
 
-    def poisson_pattern_optimisation(self, start, stop, n):
+    def _poisson_pattern_optimisation(self, start, stop, n):
         # initialize
         max_x = self.geometry['lx']
         max_y = self.geometry['ly']
-        step = (stop - start)/n
+        step = (stop - start) / n
         radii = np.arange(start=start, stop=stop, step=step)
         best_mom = 0
         target_mom = self.arrangement['target_mom']
@@ -172,7 +177,7 @@ class ScatteringStructure:
         for r in radii:
             # print(r)
             pattern = poisson_disc.Bridson_sampling(radius=r, dims=np.array([max_x, max_y]))
-            current_mom = self.measure_of_merit(pattern)
+            current_mom = self._measure_of_merit(pattern)
             # check if measure of merit has improved
             if abs(current_mom - target_mom) < abs(best_mom - target_mom):
                 best_mom = current_mom
@@ -185,7 +190,7 @@ class ScatteringStructure:
     # REDUCE TO SPECIFIC GEOMETRIES
     # ---------------------------------------
 
-    def reduce_to_circle(self):
+    def _reduce_to_circle(self):
         circle_radius = self.geometry['circle_radius']
         lx = self.geometry['lx']
         ly = self.geometry['ly']
@@ -216,14 +221,14 @@ class ScatteringStructure:
 
         return new_points
 
-    def reduce_to_pizza_slice(self):
+    def _reduce_to_pizza_slice(self):
         pass
 
     # ---------------------------------------
     # OTHER FUNCTIONS
     # ---------------------------------------
 
-    def measure_of_merit(self, points=None):
+    def _measure_of_merit(self, points=None):
         # use class-set distribution of points
         if points is None:
             p = self.points
@@ -272,7 +277,7 @@ class ScatteringStructure:
             p = points
 
         # compute density
-        density = (len(p)*np.pi*self.scatterer_radius**2)/(max_x*max_y)
+        density = (len(p) * np.pi * self.scatterer_radius ** 2) / (max_x * max_y)
 
         return density
 
@@ -300,7 +305,8 @@ class ScatteringStructure:
 
         # Plot the circle
         circle_radius = self.geometry['circle_radius']
-        circle = plt.Circle((0, 0), circle_radius, color='r', fill=False, label=f'Circle r = {self.geometry['circle_radius']} μm')
+        circle = plt.Circle((0, 0), circle_radius, color='r', fill=False,
+                            label=f'Circle r = {self.geometry['circle_radius']} μm')
         plt.gca().add_patch(circle)
 
         # Set aspect ratio to equal
@@ -313,15 +319,6 @@ class ScatteringStructure:
 
         # Display the plot
         plt.show()
-
-    def save_distribution(self, filepath):
-        try:
-            with open(filepath, 'w') as file:
-                for x, y in self.points:
-                    file.write(f"{x}\t{y}\n")
-            print(f"Distribution saved to {filepath}")
-        except Exception as e:
-            print(f"Error saving distribution: {str(e)}")
 
     def save_device(self, filepath):
         try:
