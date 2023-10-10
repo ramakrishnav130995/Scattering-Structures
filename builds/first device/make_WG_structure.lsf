@@ -1,0 +1,60 @@
+function make_WG_structure(RING, WG, BOX, SUB) {
+
+    ## Make Substrate
+
+    addrect;
+    set('name', 'SUB');
+    coordinates = {"x": 0,
+                   "x span": SUB.length * 1e-6,
+                   "y": 0,
+                   "y span": SUB.width * 1e-6,
+                   "z min": 0,
+                   "z max": SUB.height * 1e-6};
+    set(coordinates);
+
+    select('SUB');
+    set('material', SUB.matname);
+    # default settings
+    set('color opacity', 0.5);
+    set('override mesh order from material database', 1);
+    set('mesh order', 3);
+
+    ## Make Sio2_box
+
+    addrect;
+    set('name', 'BOX');
+    coordinates = {"x": 0,
+                   "x span": BOX.length * 1e-6,
+                   "y": 0,
+                   "y span": BOX.width * 1e-6,
+                   "z min": SUB.height * 1e-6,
+                   "z max": SUB.height * 1e-6 + BOX.height * 1e-6};
+    set(coordinates);
+
+    select('BOX');
+    set('material', BOX.matname);
+    # default settings
+    set('color opacity', 0.8);
+    set('override mesh order from material database', 1);
+    set('mesh order', 3);
+
+    ## Make Waveguide: enter values in microns
+
+    addrect;
+    set('name', 'WG');
+    coordinates = {"x": 0,
+                   "x span": WG.length * 1e-6,
+                   "y": 0,
+                   "y span": WG.width * 1e-6,
+                   "z": SUB.height * 1e-6 + BOX.height * 1e-6 + 0.5*WG.height * 1e-6,
+                   "z span": WG.height * 1e-6};
+    set(coordinates);
+
+    select('WG');
+    set('material', WG.matname);
+    # default settings
+    set('color opacity', 0.5);
+    set('override mesh order from material database', 1);
+    set('mesh order', 2);
+
+}
