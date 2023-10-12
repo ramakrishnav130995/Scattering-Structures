@@ -341,3 +341,6 @@ class ScatteringStructure:
         except Exception as e:
             print(f"Error loading distribution: {str(e)}")
             return None
+
+    def get_reduced_points(self):
+        return self.reduced_points
