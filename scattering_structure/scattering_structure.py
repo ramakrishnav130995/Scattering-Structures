@@ -5,7 +5,13 @@ import math
 
 
 class ScatteringStructure:
-    def __init__(self, geometry: dict, arrangement: dict, scatterer_radius: float, position=(0, 0)):
+    def __init__(
+        self,
+        geometry: dict,
+        arrangement: dict,
+        scatterer_radius: float,
+        position=(0, 0),
+    ):
         self.center_pos = position
         self.geometry = geometry
         self.arrangement = arrangement
@@ -13,51 +19,63 @@ class ScatteringStructure:
 
         self.points = None
         # create arrangement based on class definition
-        if arrangement['type'] == 'rectangular':
+        if arrangement["type"] == "rectangular":
             self.points = self.create_rectangular_pattern()
-        elif arrangement['type'] == 'tetrahedral':
+        elif arrangement["type"] == "tetrahedral":
             self.points = self.create_tetrahedral_pattern()
-        elif arrangement['type'] == 'random':
+        elif arrangement["type"] == "random":
             self.points = self.create_random_pattern()
-        elif arrangement['type'] == 'poisson_disc':
+        elif arrangement["type"] == "poisson_disc":
             self.points = self.create_poisson_disc_sampling_pattern()
-        elif arrangement['type'] == 'load_from_file':
-            self.points = self.load(arrangement['filepath'])
+        elif arrangement["type"] == "load_from_file":
+            self.points = self.load(arrangement["filepath"])
         else:
-            raise TypeError(f'The given arrangement type {self.arrangement} is not supported')
+            raise TypeError(
+                f"The given arrangement type {self.arrangement} is not supported"
+            )
 
         # reduce arrangement from box to fill a pizza slice or circle
         self.reduced_points = None
-        if geometry['type'] == 'box':
+        if geometry["type"] == "box":
             self.reduced_points = self.points
-        elif geometry['type'] == 'circle':
+        elif geometry["type"] == "circle":
             self.reduced_points = self._reduce_to_circle()
-        elif geometry['type'] == 'load_from_file':
-            self.reduced_points = self.points  # since the arrangement is already reduced
+        elif geometry["type"] == "load_from_file":
+            self.reduced_points = (
+                self.points
+            )  # since the arrangement is already reduced
         else:
-            raise TypeError(f'The given geometry type {geometry['type']} is not supported')
+            raise TypeError(
+                f'The given geometry type {geometry["type"]} is not supported'
+            )
 
     # ---------------------------------------
     # DIFFERENT SCATTERER DISTRIBUTIONS
     # ---------------------------------------
 
     def create_rectangular_pattern(self):
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
-        dist = self.arrangement['dist']
-        positions = np.array([(x, y)
-                              for x in np.arange(0 + self.scatterer_radius, max_x - self.scatterer_radius,
-                                                 step=dist)
-                              for y in np.arange(0 + self.scatterer_radius, max_y - self.scatterer_radius,
-                                                 step=dist)])
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
+        dist = self.arrangement["dist"]
+        positions = np.array(
+            [
+                (x, y)
+                for x in np.arange(
+                    0 + self.scatterer_radius, max_x - self.scatterer_radius, step=dist
+                )
+                for y in np.arange(
+                    0 + self.scatterer_radius, max_y - self.scatterer_radius, step=dist
+                )
+            ]
+        )
 
         return positions
 
     def create_tetrahedral_pattern(self):
         # TODO does not work
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
-        dist = self.arrangement['dist']
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
+        dist = self.arrangement["dist"]
         sqrt3 = np.sqrt(3)
 
         positions = []
@@ -79,17 +97,21 @@ class ScatteringStructure:
 
     def create_random_pattern(self):
         # TODO can be done faster
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
 
         # if the structure should just be plainly instanced
-        if not self.arrangement['optimization']:
+        if not self.arrangement["optimization"]:
             points = []
-            num_points = self.arrangement['num_points']
+            num_points = self.arrangement["num_points"]
             while len(points) < num_points:
                 # create random point in given range
-                x = np.random.uniform(0 + self.scatterer_radius, max_x - self.scatterer_radius)
-                y = np.random.uniform(0 + self.scatterer_radius, max_y - self.scatterer_radius)
+                x = np.random.uniform(
+                    0 + self.scatterer_radius, max_x - self.scatterer_radius
+                )
+                y = np.random.uniform(
+                    0 + self.scatterer_radius, max_y - self.scatterer_radius
+                )
                 # only as point to list if it doesn't hit rest of the
                 valid = True
                 for px, py in points:
@@ -105,14 +127,18 @@ class ScatteringStructure:
             points = []
             # the loop is done until it fails
             # only later the solution with the closest to target_rms is picked
-            target_mom = self.arrangement['target_mom']
+            target_mom = self.arrangement["target_mom"]
             best_points = []
             best_mom = 0
             i = 0
             while i < 100:
                 # create random point in given range
-                x = np.random.uniform(0 + self.scatterer_radius, max_x - self.scatterer_radius)
-                y = np.random.uniform(0 + self.scatterer_radius, max_y - self.scatterer_radius)
+                x = np.random.uniform(
+                    0 + self.scatterer_radius, max_x - self.scatterer_radius
+                )
+                y = np.random.uniform(
+                    0 + self.scatterer_radius, max_y - self.scatterer_radius
+                )
                 # only as point to list if it doesn't hit rest of the
                 point_valid = True
                 for px, py in points:
@@ -136,14 +162,15 @@ class ScatteringStructure:
             return np.array(best_points)
 
     def create_poisson_disc_sampling_pattern(self):
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
         # if the structure should just be plainly instanced
-        if not self.arrangement['optimization']:
+        if not self.arrangement["optimization"]:
             # generate point pattern via Bridson's poisson sampling algorithm
             # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-            points = poisson_disc.Bridson_sampling(radius=self.arrangement['poisson_radius'],
-                                                   dims=np.array([max_x, max_y]))
+            points = poisson_disc.Bridson_sampling(
+                radius=self.arrangement["poisson_radius"], dims=np.array([max_x, max_y])
+            )
 
             return points
 
@@ -152,12 +179,14 @@ class ScatteringStructure:
             # define a initial radius range
             rng = (8 - 2) * self.scatterer_radius
             middle = 5 * self.scatterer_radius
-            for i in range(self.arrangement['optimization_outer_n']):
+            for i in range(self.arrangement["optimization_outer_n"]):
                 # print(i)
                 # get the pattern closest to target mom in initial range
-                pattern, middle = self._poisson_pattern_optimisation(start=middle - 0.5 * rng,
-                                                                     stop=middle + 0.5 * rng,
-                                                                     n=self.arrangement['optimization_inner_n'])
+                pattern, middle = self._poisson_pattern_optimisation(
+                    start=middle - 0.5 * rng,
+                    stop=middle + 0.5 * rng,
+                    n=self.arrangement["optimization_inner_n"],
+                )
                 # cut the range by half
                 rng *= 0.5
 
@@ -165,18 +194,20 @@ class ScatteringStructure:
 
     def _poisson_pattern_optimisation(self, start, stop, n):
         # initialize
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
         step = (stop - start) / n
         radii = np.arange(start=start, stop=stop, step=step)
         best_mom = 0
-        target_mom = self.arrangement['target_mom']
+        target_mom = self.arrangement["target_mom"]
         best_pattern = []
         best_radius = 0
         # compute a pattern for each radius
         for r in radii:
             # print(r)
-            pattern = poisson_disc.Bridson_sampling(radius=r, dims=np.array([max_x, max_y]))
+            pattern = poisson_disc.Bridson_sampling(
+                radius=r, dims=np.array([max_x, max_y])
+            )
             current_mom = self._measure_of_merit(pattern)
             # check if measure of merit has improved
             if abs(current_mom - target_mom) < abs(best_mom - target_mom):
@@ -191,9 +222,9 @@ class ScatteringStructure:
     # ---------------------------------------
 
     def _reduce_to_circle(self):
-        circle_radius = self.geometry['circle_radius']
-        lx = self.geometry['lx']
-        ly = self.geometry['ly']
+        circle_radius = self.geometry["circle_radius"]
+        lx = self.geometry["lx"]
+        ly = self.geometry["ly"]
 
         # Calculate the coordinates of the center of the circle
         center_x = lx / 2
@@ -203,7 +234,7 @@ class ScatteringStructure:
         new_points = []
 
         # Calculate the square of the circle radius for faster comparison
-        circle_radius_squared = circle_radius ** 2
+        circle_radius_squared = circle_radius**2
 
         # Iterate through the original points
         for x, y in self.points:
@@ -237,12 +268,16 @@ class ScatteringStructure:
             p = points
         # compute rms
         n = len(p)
-        if self.arrangement['measure_of_merit'] == 'rms':
+        if self.arrangement["measure_of_merit"] == "rms":
             return self.rms(p)
-        elif self.arrangement['measure_of_merit'] == 'density':
+        elif self.arrangement["measure_of_merit"] == "density":
             return self.density(p)
         else:
-            raise TypeError('The given measure of merit', self.arrangement['measure_of_merit'], 'is not supported')
+            raise TypeError(
+                "The given measure of merit",
+                self.arrangement["measure_of_merit"],
+                "is not supported",
+            )
 
     def rms(self, points=None):
         # use class-set distribution of points
@@ -257,9 +292,9 @@ class ScatteringStructure:
             return 0
         else:
             outer_sum = 0
-            for (px, py) in p:
+            for px, py in p:
                 inner_sum = 0
-                for (x, y) in p:
+                for x, y in p:
                     inner_sum += math.dist([px, py], [x, y]) ** 2
                 outer_sum += (inner_sum / n) ** 0.5
             outer_sum *= 1 / n
@@ -267,8 +302,8 @@ class ScatteringStructure:
             return outer_sum
 
     def density(self, points=None):
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
+        max_x = self.geometry["lx"]
+        max_y = self.geometry["ly"]
         # use class-set distribution of points
         if points is None:
             p = self.points
@@ -277,7 +312,7 @@ class ScatteringStructure:
             p = points
 
         # compute density
-        density = (len(p) * np.pi * self.scatterer_radius ** 2) / (max_x * max_y)
+        density = (len(p) * np.pi * self.scatterer_radius**2) / (max_x * max_y)
 
         return density
 
@@ -286,12 +321,12 @@ class ScatteringStructure:
         x, y = zip(*self.points)
 
         # Create a scatter plot with marker size
-        plt.scatter(x, y, s=np.pi * self.scatterer_radius ** 2)
+        plt.scatter(x, y, s=np.pi * self.scatterer_radius**2)
 
         # Set aspect ratio to equal
-        plt.gca().set_aspect('equal')
-        plt.xlabel('μm')
-        plt.ylabel('μm')
+        plt.gca().set_aspect("equal")
+        plt.xlabel("μm")
+        plt.ylabel("μm")
 
         # Display the plot
         plt.show()
@@ -301,18 +336,23 @@ class ScatteringStructure:
         x, y = zip(*self.reduced_points)
 
         # Create a scatter plot of reduced points
-        plt.scatter(x, y, s=np.pi * self.scatterer_radius ** 2)
+        plt.scatter(x, y, s=np.pi * self.scatterer_radius**2)
 
         # Plot the circle
-        circle_radius = self.geometry['circle_radius']
-        circle = plt.Circle((0, 0), circle_radius, color='r', fill=False,
-                            label=f'Circle r = {self.geometry['circle_radius']} μm')
+        circle_radius = self.geometry["circle_radius"]
+        circle = plt.Circle(
+            (0, 0),
+            circle_radius,
+            color="r",
+            fill=False,
+            label=f'Circle r = {self.geometry["circle_radius"]} μm',
+        )
         plt.gca().add_patch(circle)
 
         # Set aspect ratio to equal
-        plt.gca().set_aspect('equal')
-        plt.xlabel('μm')
-        plt.ylabel('μm')
+        plt.gca().set_aspect("equal")
+        plt.xlabel("μm")
+        plt.ylabel("μm")
 
         # Add a legend
         plt.legend()
@@ -322,7 +362,7 @@ class ScatteringStructure:
 
     def save_device(self, filepath):
         try:
-            with open(filepath, 'w') as file:
+            with open(filepath, "w") as file:
                 for x, y in self.reduced_points:
                     file.write(f"{x}\t{y}\n")
             print(f"Distribution saved to {filepath}")
@@ -332,9 +372,9 @@ class ScatteringStructure:
     def load(self, filepath):
         try:
             points = []
-            with open(filepath, 'r') as file:
+            with open(filepath, "r") as file:
                 for line in file:
-                    x, y = map(float, line.strip().split('\t'))
+                    x, y = map(float, line.strip().split("\t"))
                     points.append((x, y))
             print(f"Distribution loaded from {filepath}")
             return points
