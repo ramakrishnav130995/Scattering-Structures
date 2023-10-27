@@ -206,3 +206,166 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
     #########################################
     # Add monitors
     #########################################
+    # 2D y-normal monitor
+    y_normal_configuration = {
+        "monitor type": 6,  # 2D y normal
+        "y": 0.0,
+        "z min": 0.0,
+        "x span": block_length * 1e-6,
+        "z max": simulation_height * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "2D Y-normal")
+    # set geometry
+    for key, value in y_normal_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("Monitors")
+
+    # 2D x-normal monitor
+    y_normal_configuration = {
+        "monitor type": 5,  # 2D x normal
+        "x": 0.0,
+        "z min": 0.0,
+        "y span": block_width * 1e-6,
+        "z max": simulation_height * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "2D X-normal")
+    # set geometry
+    for key, value in y_normal_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("Monitors")
+
+    # slab-edge monitor(s)
+    # four individual monitors have to be added.
+    slab_edge_configuration = {
+        "monitor type": 6,  # 2D y normal
+        "y": -0.5 * block_width * 1e-6,
+        "x": 0,
+        "x span": block_length * 1e-6,
+        "z min": (SUB["height"] + BOX["height"]) * 1e-6,
+        "z max": (SUB["height"] + BOX["height"] + WG["height"]) * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "1")
+    # set geometry
+    for key, value in slab_edge_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("WG edge monitor(s)")
+    #########################
+    slab_edge_configuration = {
+        "monitor type": 6,  # 2D y normal
+        "y": +0.5 * block_width * 1e-6,
+        "x": 0,
+        "x span": block_length * 1e-6,
+        "z min": (SUB["height"] + BOX["height"]) * 1e-6,
+        "z max": (SUB["height"] + BOX["height"] + WG["height"]) * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "2")
+    # set geometry
+    for key, value in slab_edge_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("WG edge monitor(s)")
+    #########################
+    slab_edge_configuration = {
+        "monitor type": 5,  # 2D y normal
+        "x": -0.5 * block_length * 1e-6,
+        "y": 0,
+        "y span": block_width * 1e-6,
+        "z min": (SUB["height"] + BOX["height"]) * 1e-6,
+        "z max": (SUB["height"] + BOX["height"] + WG["height"]) * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "3")
+    # set geometry
+    for key, value in slab_edge_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("WG edge monitor(s)")
+    #########################
+    slab_edge_configuration = {
+        "monitor type": 5,  # 2D y normal
+        "x": +0.5 * block_length * 1e-6,
+        "y": 0,
+        "y span": block_width * 1e-6,
+        "z min": (SUB["height"] + BOX["height"]) * 1e-6,
+        "z max": (SUB["height"] + BOX["height"] + WG["height"]) * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "4")
+    # set geometry
+    for key, value in slab_edge_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("WG edge monitor(s)")
+    fdtd.select("WG edge monitor(s)")
+    fdtd.addtogroup("Monitors")
+
+    # substrate monitor
+    substrate_configuration = {
+        "monitor type": 3,  # 2D z normal
+        "x": 0.0,
+        "y": 0.0,
+        "x span": block_length * 1e-6,
+        "y span": block_width * 1e-6,
+        "z": 0.0,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "2D z-normal SUB monitor")
+    # set geometry
+    for key, value in substrate_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("Monitors")
+
+    # air monitor
+    air_configuration = {
+        "monitor type": 3,  # 2D z normal
+        "x": 0.0,
+        "y": 0.0,
+        "x span": block_length * 1e-6,
+        "y span": block_width * 1e-6,
+        "z": simulation_height * 1e-6,
+    }
+    fdtd.addpower()
+    fdtd.set("name", "2D z-normal Air monitor")
+    # set geometry
+    for key, value in air_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("Monitors")
+
+    # movie monitor
+    movie_configuration = {
+        "monitor type": 1,  # 2D x normal
+        "x": 0,
+        "y": 0,
+        "y span": block_width * 1e-6,
+        "z": 0,
+        "z span": simulation_height * 1e-6,
+        "horizonal resolution": 100,
+        "vertical resolution": 100, # TODO with mesh size
+    }
+    fdtd.addmovie()
+    fdtd.set("name", "2D x-normal movie monitor")
+    # set geometry
+    for key, value in movie_configuration.items():
+        fdtd.set(key, value)
+    fdtd.addtogroup("Monitors")
+
+    # movie monitor 2D z normal in WG
+    movie_configuration = {
+        "monitor type": 3,  # 2D z normal
+        "x": 0,
+        "y": 0,
+        "x span": block_length * 1e-6,
+        "y span": block_width * 1e-6,
+        "z": 0,
+        "horizonal resolution": 100,
+        "vertical resolution": 100, # TODO with mesh size
+    }
+    fdtd.addmovie()
+    fdtd.set("name", "2D z-normal WG movie monitor")
+    fdtd.addtogroup("Monitors")
+
+    #########################################
+    # Save
+    #########################################
+    fdtd.save(name=lumerical_name + ".fsp")
