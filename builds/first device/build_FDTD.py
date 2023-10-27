@@ -1,154 +1,208 @@
-import sys, os
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.io import savemat
 from read_hdf5_reader import *  # Importing a custom module
+from scattering_structure.scattering_structure import ScatteringStructure
 
-from tabulate import tabulate  # Importing the 'tabulate' module
+import importlib.util
+import os
 
-# Clear the console screen (works on Windows)
-os.system("cls")
+# Add the DLL directory
+os.add_dll_directory("C:\\Program Files\\Lumerical\\v232\\api\\python")
 
-# Default path for current release
-sys.path.append("C:\\Program Files\\Lumerical\\v231\\api\\python\\")
-sys.path.append(os.path.dirname(__file__))  # Current directory
+# Define the module name and file path
+module_name = "lumapi"
+# file_path = "C:\\Program Files\\Lumerical\\v232\\api\\python\\lumapi.py"
+file_path = "C:\\Program Files\\Lumerical\\v232\\api\\python\\lumapi.py"
 
-import lumapi  # Import the 'lumapi' module
 
-## Define new project Details:
+def load_module_from_file(module_name, file_path):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
-# Define materials
-# SiO2 (Glass) - Palik
-# etch
-# Si (Silicon) - Palik
-# Si3N4 (Silicon Nitride) - Luke
-# PIXEL-TAO205
-# PIXEL-SiO2
 
-########### Design is in XY plane: x- length, y-height, and z-width ###########
+# Load the module
+lumapi = load_module_from_file(module_name, file_path)
 
-wavelength = 0.925  # Wavelength in microns
-modes = 6
 
-WG_height = 0.300
-BOX_height = 2.7
+def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
+    ## Constants
+    wavelength_start = 1.5
+    wavelength_stop = 1.6
+    block_length = 210
+    block_width = 210
+    simulation_height = 20
+    modes = 100
 
-N = 50
-N_uni = 10
-Lambda = 0.845
-ff_in = 0.94
-ff_fin = 0.6
 
-# Define TOX parameters
-TOX = {
-    "TOXlength": 80,
-    "TOXheight": 2.6,
-    "TOXwidth": 50,
-    "TOXmatname": "etch",
-}
+    WG = {
+        "length": block_length,
+        "width": block_width,
+        "height": 0.22,
+        "matname": "Si3N4 (Silicon Nitride) - Luke"
+    }
 
-# Define WG parameters
-WG = {
-    "WGlength": TOX["TOXlength"],
-    "WGheight": WG_height,
-    "WGwidth": 1.3,
-    "WGmatname": "Si3N4 (Silicon Nitride) - Luke",
-}
+    BOX = {
+        "length": block_length,
+        "width": block_width,
+        "height": 3,
+        "matname": "SiO2 (Glass) - Palik"
+    }
 
-matname = "SiN"
+    SUB = {
+        "length": block_length,
+        "width": block_width,
+        "height": 1,
+        "matname": "Si (Silicon) - Palik"
+    }
 
-# Define BOX parameters
-BOX = {
-    "BOXlength": TOX["TOXlength"],
-    "BOXheight": BOX_height,
-    "BOXwidth": 50,
-    "BOXmatname": "SiO2 (Glass) - Palik",
-}
+    RING = {
+        "inner radius": 0.9384,
+        "outer radius": 1.3432,
+        "height": 0.070,
+        "matname": "etch"
+    }
 
-# Define SUB parameters
-SUB = {
-    "sublength": TOX["TOXlength"],
-    "subheight": 525,
-    "subwidth": 50,
-    "submatname": "Si (Silicon) - Palik",
-}
+    #########################################
+    # SiO2, Si3N4, Air stack
+    #########################################
+    fdtd = lumapi.FDTD()
+    # Si
+    fdtd.addrect()
+    fdtd.set('name', 'SUB')
+    coordinates = {"x": 0,
+                   "x span": SUB["length"] * 1e-6,
+                   "y": 0,
+                   "y span": SUB["width"] * 1e-6,
+                   "z min": 0,
+                   "z max": SUB["height"] * 1e-6}
+    fdtd.set(coordinates)
+    fdtd.select('SUB')
+    fdtd.set('material', SUB["matname"])
+    # default settings
+    fdtd.set('color opacity', 0.5)
+    fdtd.set('override mesh order from material database', 1)
+    fdtd.set('mesh order', 3)
+    # SiO2
+    fdtd.addrect()
+    fdtd.set('name', 'BOX')
+    coordinates = {"x": 0,
+                   "x span": BOX["length"] * 1e-6,
+                   "y": 0,
+                   "y span": BOX["width"] * 1e-6,
+                   "z min": SUB["height"] * 1e-6,
+                   "z max": (SUB["height"] + BOX["height"]) * 1e-6}
+    fdtd.set(coordinates)
+    fdtd.select('BOX')
+    fdtd.set('material', BOX["matname"])
+    # default settings
+    fdtd.set('color opacity', 0.5)
+    fdtd.set('override mesh order from material database', 1)
+    fdtd.set('mesh order', 3)
+    # Si3N4
+    fdtd.addrect()
+    fdtd.set('name', 'WG')
+    coordinates = {"x": 0,
+                   "x span": WG["length"] * 1e-6,
+                   "y": 0,
+                   "y span": WG["width"] * 1e-6,
+                   "z min": (SUB["height"] + BOX["height"]) * 1e-6,
+                   "z max": (SUB["height"] + BOX["height"] + WG["height"]) * 1e-6}
+    fdtd.set(coordinates)
+    fdtd.select('WG')
+    fdtd.set('material', WG["matname"])
+    # default settings
+    fdtd.set('color opacity', 0.5)
+    fdtd.set('override mesh order from material database', 1)
+    fdtd.set('mesh order', 3)
 
-# Define UGC parameters
-UGC = {
-    "etch_ht": WG["WGheight"],
-    "etch_mat": TOX["TOXmatname"],
-    "F_val": 0.75,
-    "theta": 12,
-    "inputwglength": 4,
-    "outputwglength": 4,
-    "gratinglength": 70,
-}
+    #########################################
+    # Add rings
+    #########################################
+    # get the distribution
+    load_pois = ScatteringStructure(geometry={'type': 'load_from_file'},
+                                    arrangement={'type': 'load_from_file',
+                                                 'filepath': distribution_file},
+                                    scatterer_radius=1.343
+                                    )
+    i = 0
+    for (x, y) in load_pois.get_reduced_points():
+        name = str(i)
+        fdtd.addring()
+        fdtd.set('name', name)
+        coordinates = {"x": x * 1e-6,
+                       "y": y * 1e-6,
+                       "z": 20 * 1e-6,
+                       "z span": RING["height"] * 1e-6,
+                       "inner radius": RING["inner radius"] * 1e-6,
+                       "outer radius": RING["outer radius"] * 1e-6}
+        fdtd.set(coordinates)
+        fdtd.select(name)
+        fdtd.set('material', RING["matname"])
+        # fdtd.set('addtogroup', 'RINGS')
+        # default settings
+        fdtd.set('color opacity', 0.5)
+        fdtd.set('override mesh order from material database', 1)
+        fdtd.set('mesh order', 1)
+        fdtd.addtogroup("RINGS")
+        i += 1
 
-if (
-    UGC["inputwglength"] + UGC["outputwglength"] + UGC["gratinglength"]
-    > TOX["TOXlength"]
-):
-    UGC["outputwglength"] = TOX["TOXlength"] - (
-        UGC["inputwglength"] + UGC["gratinglength"]
-    )
+        # save file as is
+    fdtd.save("first_device.fsp")
+    #########################################
+    # Add solver
+    #########################################
+    configuration = {
+        "FDTD": {
+            "simulation time": 200e-15,  # in seconds
+            "dimension": "3D",
+            "x": 0,
+            "y": 0.0,
+            "z min": 0.0,
+            "x span": block_length * 1e-6,
+            "y span": block_width * 1e-6,
+            "z max": simulation_height * 1e-6,
+            "mesh accuracy": 1,
+            "min mesh step": 0.025 * 1e-6
+        }
+    }
 
-# Define parent directory
-parent_dir = r"C:/Users/RamakrishnaVenkitakr/OneDrive - Pixel Photonics GmbH/Projects/2D_coupler_project/simulations/2D_coupler"
-parent_dir = os.path.join(
-    parent_dir, "Lumerical_Trials", "September_2023"
-)
+    # add solver
+    fdtd.addfdtd()
+    for key, value in configuration["FDTD"].items():
+        fdtd.setnamed("FDTD", key, value)
 
-# Define new folder name
-new_folder_name = (
-    matname
-    + "_"
-    + str(int(wavelength * 1000))
-    + "_twg_"
-    + str(int(WG["WGheight"] * 1000))
-)
+    # add boundary conditions
+    # is PMC by default
 
-# Create new directory structure if it doesn't exist
-path = os.path.join(parent_dir, new_folder_name)
-results_path = os.path.join(path, "results")
+    #########################################
+    # Add sources
+    #########################################
+    configuration = {
+        "gaussian": {
+            "name": "gaussian",
+            "x": 0,
+            "x span": block_length * 1e-6,
+            "y": 0,
+            "y span": block_width * 1e-6,
+            "z": simulation_height * 1e-6,
+            "waist radius w0": 50 * 1e-6,
+            "direction": "Backward",
+            "wavelength start": wavelength_start * 1e-6,
+            "wavelength stop": wavelength_stop * 1e-6,
+            "injection axis": "z",
+            "theta": injection_angle
+        }
+    }
 
-if os.path.isdir(path) is False:
-    os.mkdir(path)
-    os.mkdir(results_path)
-    os.mkdir(os.path.join(results_path, "WG"))
-    print("Directory '%s' created" % new_folder_name)
-else:
-    print("Directory ' %s' Already Exist")
+    # add gaussian source
+    fdtd.addgaussian()
+    for key, value in configuration["gaussian"].items():
+        fdtd.setnamed("gaussian", key, value)
 
-lsfpath = r"C:\Users\RamakrishnaVenkitakr\OneDrive - Pixel Photonics GmbH\Projects\2D_coupler_project\grating_coupler_lsf"
+    #########################################
+    # Add mesh constraint
+    #########################################
 
-savepath = path  ##Default save in the new directory
-
-print("save path is " + savepath)
-
-def waveguide_mode_analysis():
-    # Create a MODE object
-    mode1 = lumapi.MODE(hide=True)
-
-    # Read and evaluate code from a file
-    code = open(lsfpath + "/function_Waveguide_design.lsf").read()
-    mode1.eval(code)
-
-    # Perform WG analysis
-    mode1.WG_analysis(TOX, WG, BOX, SUB, UGC, wavelength, modes, savepath)
-    print("Waveguide simulation over\n")
-
-def open_file(path, folder_name):
-    simulationCMD = os.path.join(path, folder_name + ".fsp")
-    engineCMD = '"C:\\Program files\\Lumerical\\v231\\bin\\fdtd-solutions.exe" -run '
-    fullcmd = engineCMD + '"' + simulationCMD + '"'
-    print('start "name" /B ' + fullcmd)
-    lumapi.FDTD().system('start "name" /B ' + fullcmd)
-
-def main():
-    waveguide_mode_analysis()
-    path = r""  # Add the actual path
-    folder_name = ""  # Add the actual folder name
-    open_file(path, folder_name)
-
-if __name__ == "__main__":
-    main()
+    #########################################
+    # Add monitors
+    #########################################
