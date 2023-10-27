@@ -369,3 +369,4 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
     # Save
     #########################################
     fdtd.save(name=lumerical_name + ".fsp")
+
