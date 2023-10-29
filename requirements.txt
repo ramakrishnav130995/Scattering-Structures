@@ -2,3 +2,4 @@ numpy
 poisson-disc
 matplotlib
 tabulate
+h5py

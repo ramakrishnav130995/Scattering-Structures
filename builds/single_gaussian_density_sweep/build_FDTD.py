@@ -4,6 +4,9 @@ from scattering_structure.scattering_structure import ScatteringStructure
 import importlib.util
 import os
 
+# TODO change monitor record data
+# TODO finalize mesh size
+
 # Add the DLL directory
 os.add_dll_directory("C:\\Program Files\\Lumerical\\v232\\api\\python")
 
@@ -133,7 +136,7 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
         fdtd.set('name', name)
         coordinates = {"x": x * 1e-6,
                        "y": y * 1e-6,
-                       "z": 20 * 1e-6,
+                       "z": (SUB["height"] + BOX["height"] + WG["height"] - 0.5*RING["height"]) * 1e-6,
                        "z span": RING["height"] * 1e-6,
                        "inner radius": RING["inner radius"] * 1e-6,
                        "outer radius": RING["outer radius"] * 1e-6}
@@ -191,7 +194,7 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
             "wavelength start": wavelength_start * 1e-6,
             "wavelength stop": wavelength_stop * 1e-6,
             "injection axis": "z",
-            "angle theta": -45
+            "angle theta": injection_angle
         }
     }
 
@@ -379,5 +382,5 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
     #########################################
     # Save
     #########################################
-    fdtd.save(name=lumerical_name + ".fsp")
+    fdtd.save(lumerical_name)
 
