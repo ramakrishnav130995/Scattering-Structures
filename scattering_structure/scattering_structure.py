@@ -42,13 +42,15 @@ class ScatteringStructure:
     # ---------------------------------------
 
     def create_rectangular_pattern(self):
-        max_x = self.geometry['lx']
-        max_y = self.geometry['ly']
+        min_x = -0.5*self.geometry['lx']
+        max_x = +0.5*self.geometry['lx']
+        min_y = -0.5*self.geometry['ly']
+        max_y = +0.5*self.geometry['ly']
         dist = self.arrangement['dist']
         positions = np.array([(x, y)
-                              for x in np.arange(0 + self.scatterer_radius, max_x - self.scatterer_radius,
+                              for x in np.arange(min_x + self.scatterer_radius, max_x - self.scatterer_radius,
                                                  step=dist)
-                              for y in np.arange(0 + self.scatterer_radius, max_y - self.scatterer_radius,
+                              for y in np.arange(min_y + self.scatterer_radius, max_y - self.scatterer_radius,
                                                  step=dist)])
 
         return positions

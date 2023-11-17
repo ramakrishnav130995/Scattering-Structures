@@ -33,7 +33,7 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
     wavelength_stop = 1.6
     block_length = 210
     block_width = 210
-    simulation_height = 20
+    simulation_height = 20 # TODO not implemented everywhere
     modes = 100
     min_mesh_step = 0.04
     wg_mesh_step = 0.005
@@ -186,11 +186,11 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
             "x span": block_length * 1e-6,
             "y": 0,
             "y span": block_width * 1e-6,
-            "z": 20 * 1e-6,
+            "z": 20 * 1e-6, # TODO slightly lower
             "waist radius w0": 50 * 1e-6,
             "direction": "Backward",
             "wavelength start": wavelength_start * 1e-6,
-            "wavelength stop": wavelength_stop * 1e-6,
+            "wavelength stop": wavelength_stop * 1e-6, # TODO change to range of 0.2
             "injection axis": "z",
             "angle theta": injection_angle
         }
@@ -324,6 +324,9 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
         "x span": block_length * 1e-6,
         "y span": block_width * 1e-6,
         "z": 0.0,
+        "output Hx": 0,
+        "output Hy": 0,
+        "output Hz": 0,
     }
     fdtd.addpower()
     fdtd.set("name", "2D z-normal SUB monitor")
@@ -340,6 +343,9 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
         "x span": block_length * 1e-6,
         "y span": block_width * 1e-6,
         "z": 20 * 1e-6,
+        "output Hx": 0, # TODO this doesnt work
+        "output Hy": 0,
+        "output Hz": 0,
     }
     fdtd.addpower()
     fdtd.set("name", "2D z-normal Air monitor")
@@ -354,11 +360,27 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
         "x": 0,
         "y": 0,
         "y span": block_width * 1e-6,
-        "z": 0,
-        "z span": 20 * 1e-6,
+        "z min": 0,
+        "z max": 20 * 1e-6,
     }
     fdtd.addmovie()
     fdtd.set("name", "2D x-normal movie monitor")
+    fdtd.addtogroup("Monitors")
+    # set geometry
+    for key, value in movie_configuration.items():
+        fdtd.set(key, value)
+
+    # movie monitor
+    movie_configuration = {
+        "monitor type": 2,  # 2D x normal
+        "x": 0,
+        "y": 0,
+        "x span": block_length * 1e-6,
+        "z min": 0,
+        "z max": 20 * 1e-6,
+    }
+    fdtd.addmovie()
+    fdtd.set("name", "2D y-normal movie monitor")
     fdtd.addtogroup("Monitors")
     # set geometry
     for key, value in movie_configuration.items():
@@ -371,7 +393,7 @@ def build_FDTD(distribution_file: str, lumerical_name: str, injection_angle=0):
         "y": 0,
         "x span": block_length * 1e-6,
         "y span": block_width * 1e-6,
-        "z": 0,
+        "z": 0, # TODO this does not work
     }
     fdtd.addmovie()
     fdtd.set("name", "2D z-normal WG movie monitor")
