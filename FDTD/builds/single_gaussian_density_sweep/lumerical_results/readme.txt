@@ -1,0 +1,1 @@
+this folder is popylated with Lumerical FDTD results files. Since their size is large, they are not included in the remote repository.
