@@ -1,0 +1,90 @@
+#########################################################################
+###     pc_slab_rcwa.lsf
+###     This script should be run with the "pc_slab_rcwa.fsp" file open in FDTD
+###     Comparison against V.Liu and S. Fan, "S4: A free electromagnetic solver for layered periodic structures",
+###     Computer Physics Communications, 183, 2233-2244, 2012
+###
+###     Copyright 2023 Ansys, Inc
+#########################################################################
+
+##
+## Step 1
+clear;
+
+# Settings/Variables
+a = 1e-6;
+numFreqPoints = 201;
+f =linspace(0.5,0.55,numFreqPoints)*c/a;
+setnamed("RCWA", "minimum frequency", min(f));
+setnamed("RCWA", "maximum frequency", max(f));
+setnamed("RCWA", "frequency points", numFreqPoints);
+
+setnamed("RCWA", "incident angle", "single");
+setnamed("RCWA", "angle theta", 0);
+setnamed("RCWA", "angle phi", 0);
+setnamed("RCWA", "max number k vectors", 20);
+
+# Run RCWA solver
+run("RCWA");
+total_energy = getresult("RCWA", "total_energy");
+Rp = pinch(total_energy.Rp);
+Tp = pinch(total_energy.Tp);
+
+# Plot transmission/reflection results 
+plot(f*a/c,Tp);
+holdon;
+plot(f*a/c,Rp);
+holdoff;
+legend("Transmission", "Reflection");
+setplot("x label", "Normalized Frequency");
+setplot("y label", "Normalized Power");
+
+
+##
+## Step 2
+
+# Run sweep to calculate transmission as a function of number of k vectors
+runsweep("k vector sweep");
+
+TE = getsweepresult("k vector sweep", "TE");
+Tp = TE.Tp;
+num_k = TE.num_k;
+dimlessF = TE.f*a/c;
+
+peak_pos = zeros(3, length(num_k));
+for (ii=1:length(num_k)) {
+    peakIdx = findpeaks(Tp(:,:,ii),3);
+    peak_pos(:, ii) = sort(dimlessF(peakIdx));
+}
+
+peak_ref = [0.5058, 0.526, 0.542]; # Peak positions from paper
+plot(num_k, abs(peak_pos(1,:) - peak_ref(1))/peak_ref(1),"Number of k-vectors","Error in peak frequencies","");
+holdon;
+plot(num_k, abs(peak_pos(2,:) - peak_ref(2))/peak_ref(2));
+plot(num_k, abs(peak_pos(3,:) - peak_ref(3))/peak_ref(3));
+legend("Peak 1", "Peak 2", "Peak 3");
+holdoff;
+
+
+##
+## Step 3
+switchtolayout;
+
+# Update simulation parameters
+theta = linspace(0, 30, 61);
+phi = zeros(length(theta));
+angle_table = [theta, phi];
+
+setnamed("RCWA", "incident angle", "table");
+setnamed("RCWA", "incident angle table", angle_table);
+setnamed("RCWA", "max number k vectors", 40);
+
+# Run RCWA solver
+run;
+total_energy = getresult("RCWA", "total_energy");
+Tp = pinch(total_energy.Tp);
+Ts = pinch(total_energy.Ts);
+
+# Plot transmission results 
+image(f*a/c, theta, Tp, "Normalized Frequency", "Incident Angle (degrees)", "Transmission, P Polarization");
+image(f*a/c, theta, Ts, "Normalized Frequency", "Incident Angle (degrees)", "Transmission, S Polarization");
