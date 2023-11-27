@@ -346,3 +346,6 @@ class ScatteringStructure:
 
     def get_reduced_points(self):
         return self.reduced_points
+
+    def get_points(self):
+        return self.points

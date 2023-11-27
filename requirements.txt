@@ -1,5 +1,7 @@
-numpy
+numpy~=1.26.0
 poisson-disc
-matplotlib
+matplotlib~=3.8.0
 tabulate
-h5py
+h5py~=3.10.0
+gdshelpers
+shapely~=1.7.0
