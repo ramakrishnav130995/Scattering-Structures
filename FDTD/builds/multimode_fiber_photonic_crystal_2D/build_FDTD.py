@@ -57,7 +57,7 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     }
 
     FIBER = {
-        "z max": 100,  # [um]
+        "z span": 100,  # [um]
         'CORE': {
             "radius": 25,  # [um]
             "matname": "SiO2 (Glass) - Palik"
@@ -74,7 +74,7 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
         "x": 0,
         "x span": 0.8 * block_length * 1e-6,
         "y min": 2e-6,
-        "y max": 20e-6,
+        "y max": 35e-6,
         "z": 0,
         "mesh accuracy": 2,
         "min mesh step": min_mesh_step * 1e-6
@@ -162,8 +162,8 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     coordinates = {
         "x": 0,
         "y": 0,
-        "z min": 0,
-        "z max": FIBER["z max"] * 1e-6,
+        "z": 0,
+        "z span": FIBER["z span"] * 1e-6,
         "radius": FIBER["CORE"]["radius"] * 1e-6,
         "first axis": "x",
         "rotation 1": 90,
@@ -184,8 +184,8 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     coordinates = {
         "x": 0,
         "y": 0,
-        "z min": 0,
-        "z max": FIBER["z max"] * 1e-6,
+        "z": 0,
+        "z span": FIBER["z span"] * 1e-6,
         "radius": FIBER["CLADDING"]["radius"] * 1e-6,
         "first axis": "x",
         "rotation 1": 90,
