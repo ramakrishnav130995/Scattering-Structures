@@ -23,29 +23,26 @@ def load_module_from_file(module_name, file_path):
 lumapi = load_module_from_file(module_name, file_path)
 
 
-def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angle=0):
+def build_FDTD(lumerical_name: str, injection_angle=0):
     ## Constants
     wavelength_start = 1.5  # [um]
     wavelength_stop = 1.6  # [um]
     block_length = 210  # [um]
     block_width = 210  # [um]
-    simulation_height = 20  # [um]
-    modes = 100
-    min_mesh_step = 0.05
     wg_mesh_step = 0.005
 
 
     WG = {
         "length": block_length,
         "width": block_width,
-        "height": 0.22,  # [um]
+        "height": 0.33,  # [um]
         "matname": "Si3N4 (Silicon Nitride) - Luke"
     }
 
     BOX = {
         "length": block_length,
         "width": block_width,
-        "height": 3,  # [um]
+        "height": 3.3,  # [um]
         "matname": "SiO2 (Glass) - Palik"
     }
 
@@ -72,12 +69,12 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
         "simulation time": 2000e-15,  # in seconds
         "dimension": "2D",
         "x": 0,
-        "x span": 0.8 * block_length * 1e-6,
-        "y min": 2e-6,
-        "y max": 35e-6,
+        "x span": 150e-6,
+        "y min": 1e-6,
+        "y max": 25e-6,
         "z": 0,
         "mesh accuracy": 2,
-        "min mesh step": min_mesh_step * 1e-6
+        "min mesh step": 25e-9
     }
 
     PORT1 = {
@@ -85,10 +82,22 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
         "direction": "backward",
         "theta": injection_angle,
         "x": 0,
-        "x span": 80*1e-6,
-        "y": 20*1e-6,
+        "x span": 100*1e-6,
+        "y": 22*1e-6,
         "z": 0,
-        "z span": 80*1e-6
+        "z span": 100*1e-6
+    }
+
+    MOVIE = {
+        "name": "2D z normal",
+        "monitor type": "2D z-normal",
+        "x": 0,
+        "x span": 150e-6,
+        "y min": 0,
+        "y max": 15e-6,
+        "z": 0,
+        "horizontal resolution": 4000,
+        "vertical resolution": 400,
     }
 
     #########################################
@@ -210,6 +219,11 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     for key, value in FDTD.items():
         fdtd.setnamed("FDTD", key, value)
     # add BCs
+    # All PML
+
+    # change wavelength in solver manually
+    fdtd.setglobalsource("wavelength start", wavelength_start*1e-6)
+    fdtd.setglobalsource("wavelength stop", wavelength_stop*1e-6)
 
     #########################################
     # Add Ports
@@ -217,10 +231,13 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
 
     # Add port 1
     fdtd.addport()
-    fdtd.set("name", "input port")
+    fdtd.set("name", "input_port")
     for key, value in PORT1.items():
         fdtd.set(key, value)
 
+    # select first order TE mode
+    # fdtd.select("FDTD::ports")
+    # fdtd.set("source port", "input_port")
     #########################################
     # Add mesh constraint
     #########################################
@@ -229,6 +246,10 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     # Add monitors
     #########################################
 
+    # Add movie monitor
+    fdtd.addmovie()
+    for key, value in MOVIE.items():
+        fdtd.set(key, value)
 
     #########################################
     # Save
@@ -236,3 +257,55 @@ def build_FDTD(lumerical_name: str, crystal_constant, fiber_mode, injection_angl
     fdtd.save(lumerical_name)
 
     return fdtd
+
+
+def build_crystal(fdtd, **kwargs):
+    dimension = kwargs["dimension"]
+    crystal_constant = kwargs["crystal_constant"]
+    scatterer_type = kwargs["scatterer"]
+    scatterer_kwargs = kwargs["scatterer_kwargs"]
+
+    # Define crystal structure
+    def mirrored(maxval, inc=1):
+        x = np.arange(inc, maxval, inc)
+        return np.r_[-x[::-1], 0, x]
+
+    arr = np.array(mirrored(maxval=dimension/2, inc=crystal_constant))
+    point_tuples = np.array(np.meshgrid(arr, arr)).T.reshape(-1, 2)
+
+    # Add scatterers in defined crystal order into given fdtd
+
+    fdtd.select("WG")
+    y_max = fdtd.get("y max")*1e6
+    # delete old crystal
+    fdtd.select("CRYSTAL")
+
+    fdtd.delete()
+
+    for point in point_tuples:
+        # for now restrict to 2D
+        if point[1] == 0:
+            coordinates = {
+                "x": point[0] * 1e-6,
+                "z": point[1] * 1e-6,
+                "y": (y_max - 0.5 * scatterer_kwargs["depth"]) * 1e-6,
+                "z span": scatterer_kwargs["depth"] * 1e-6,
+                "first axis": "x",
+                "rotation 1": 90}
+            if scatterer_type == "CIRCLE":
+                fdtd.addcircle()
+                fdtd.set("name", "circle")
+                coordinates["radius"] = scatterer_kwargs["radius"]*1e-6
+            elif scatterer_type == "RING":
+                fdtd.addring()
+                fdtd.set("name", "ring")
+                coordinates["inner radius"] = scatterer_kwargs["inner_radius"]*1e-6
+                coordinates["outer radius"] = scatterer_kwargs["outer_radius"]*1e-6
+            else:
+                raise ValueError("Invalid scatterer type")
+            fdtd.set(coordinates)
+            fdtd.set("material", scatterer_kwargs["matname"])
+            fdtd.set("color opacity", 0.5)
+            fdtd.set("override mesh order from material database", 1)
+            fdtd.set("mesh order", 1)
+            fdtd.addtogroup("CRYSTAL")
