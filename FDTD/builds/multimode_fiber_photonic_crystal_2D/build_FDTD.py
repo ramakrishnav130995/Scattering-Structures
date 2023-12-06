@@ -32,6 +32,13 @@ def build_FDTD(lumerical_name: str, injection_angle=0):
     wg_mesh_step = 0.005
 
 
+    AIR = {
+        "length": block_length,
+        "width": block_width,
+        "height": 5,  # [um]
+        "matname": "etch"
+    }
+
     WG = {
         "length": block_length,
         "width": block_width,
@@ -82,22 +89,40 @@ def build_FDTD(lumerical_name: str, injection_angle=0):
         "direction": "backward",
         "theta": injection_angle,
         "x": 0,
-        "x span": 100*1e-6,
-        "y": 22*1e-6,
+        "x span": 60*1e-6,
+        "y": 25*1e-6,
         "z": 0,
-        "z span": 100*1e-6
+        "z span": 60*1e-6
     }
 
     MOVIE = {
         "name": "2D z normal",
         "monitor type": "2D z-normal",
         "x": 0,
-        "x span": 150e-6,
+        "x span": 100e-6,
         "y min": 0,
-        "y max": 15e-6,
+        "y max": 25e-6,
         "z": 0,
-        "horizontal resolution": 4000,
-        "vertical resolution": 400,
+        "horizontal resolution": 2000,
+        "vertical resolution": 500,
+    }
+
+    MONITOR_1 = {
+        "name": "monitor_1",
+        "monitor type": "Linear Y",
+        "x": 35e-6,
+        "y min": 8.3e-6,
+        "y max": 8.63e-6,
+        "z": 0
+    }
+
+    MONITOR_2 = {
+        "name": "monitor_2",
+        "monitor type": "Linear Y",
+        "x": -35e-6,
+        "y min": 8.3e-6,
+        "y max": 8.63e-6,
+        "z": 0
     }
 
     #########################################
@@ -162,14 +187,34 @@ def build_FDTD(lumerical_name: str, injection_angle=0):
     fdtd.set('override mesh order from material database', 1)
     fdtd.set('mesh order', 3)
 
+    # Air
+    fdtd.addrect()
+    fdtd.set('name', 'AIR')
+    coordinates = {
+        "x": 0,
+        "x span": WG["length"] * 1e-6,
+        "y min": (WG["height"] + SUB["height"] + BOX["height"]) * 1e-6,
+        "y max": (WG["height"] + SUB["height"] + BOX["height"] + AIR["height"]) * 1e-6,
+        "z": 0,
+        "z span": WG["width"] * 1e-6  # Width of Si3N4
+    }
+    fdtd.set(coordinates)
+    fdtd.select('AIR')
+    fdtd.set('material', AIR["matname"])
+    # Default settings
+    fdtd.set('color opacity', 0.5)
+    fdtd.set('override mesh order from material database', 1)
+    fdtd.set('mesh order', 3)
+
     #########################################
     # Add fiber
     #########################################
     # Add fiber core
     fdtd.addcircle()
     fdtd.set('name', 'CORE')
+    x_offset = np.sin(np.deg2rad(injection_angle)) * FDTD["y max"]
     coordinates = {
-        "x": 0,
+        "x": 0 + x_offset,
         "y": 0,
         "z": 0,
         "z span": FIBER["z span"] * 1e-6,
@@ -191,7 +236,7 @@ def build_FDTD(lumerical_name: str, injection_angle=0):
     fdtd.addcircle()
     fdtd.set('name', 'CLADDING')
     coordinates = {
-        "x": 0,
+        "x": 0 + x_offset,
         "y": 0,
         "z": 0,
         "z span": FIBER["z span"] * 1e-6,
@@ -249,6 +294,16 @@ def build_FDTD(lumerical_name: str, injection_angle=0):
     # Add movie monitor
     fdtd.addmovie()
     for key, value in MOVIE.items():
+        fdtd.set(key, value)
+
+    # Add monitor 1
+    fdtd.addpower()
+    for key, value in MONITOR_1.items():
+        fdtd.set(key, value)
+
+    # Add monitor 2
+    fdtd.addpower()
+    for key, value in MONITOR_2.items():
         fdtd.set(key, value)
 
     #########################################
