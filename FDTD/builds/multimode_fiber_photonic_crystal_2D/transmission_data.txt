@@ -1,0 +1,4 @@
+Mode: 1, Pitch: 0.82, Transmission: [1.40123087e-05]
+Mode: 1, Pitch: 0.95, Transmission: [0.00918046]
+Mode: 3, Pitch: 0.82, Transmission: [0.00010779]
+Mode: 3, Pitch: 0.95, Transmission: [0.02095864]
