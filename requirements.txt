@@ -4,4 +4,4 @@ matplotlib~=3.8.0
 tabulate
 h5py~=3.10.0
 gdshelpers
-shapely~=1.7.0
+shapely
