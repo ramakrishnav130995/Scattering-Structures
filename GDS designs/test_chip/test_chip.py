@@ -29,6 +29,7 @@ layout = GridLayout(title=None, frame_layer=0, text_layer=2, region_layer_type=N
 for x in x_pos:
     cell = InputOutputDevices.calibration_with_gratings(origin=(x,0))
     layout.add_to_row(cell)
+    test = 1
 
 # write and save chip
 layout_cell, mapping = layout.generate_layout()
