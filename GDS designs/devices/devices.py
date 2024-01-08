@@ -1,3 +1,8 @@
+import os
+
+# Set the GEOS_LIBRARY_PATH environment variable
+os.environ['GEOS_LIBRARY_PATH'] = '/opt/homebrew/Cellar/geos/3.12.1/lib/libgeos.dylib'  # Adjust the path accordingly
+
 from gdshelpers.layout import GridLayout
 from gdshelpers.geometry.chip import Cell
 from gdshelpers.parts.text import Text
