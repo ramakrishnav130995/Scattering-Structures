@@ -1,0 +1,2 @@
+RCWA/photonic_crystal_sclab_example/pc_slab_rcwa.fsp filter=lfs diff=lfs merge=lfs -text
+*.fsp filter=lfs diff=lfs merge=lfs -text

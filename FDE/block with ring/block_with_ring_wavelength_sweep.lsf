@@ -1,0 +1,132 @@
+switchtolayout;
+deleteall;
+clear;
+clc;
+
+addpath('C:\\Users\\Luis Mickeler\\Documents\\Masterarbeit\\Lumerical');
+
+## Material List
+# "Si (Silicon) - Palik"
+# "Si3N4 (Silicon Nitride) - Luke"
+# "SiO2 (Glass) - Palik"
+
+function sweep_ring_params(lam_begin, lam_end, step, inner_radius, outer_radius, results_filename){
+    # empty results struct   
+    all_results = struct;
+    num_elements = (lam_end - lam_begin)/step;
+    ?num_elements;
+    # initate counter
+    i = 1;
+            
+    for(lam=lam_begin; lam<=lam_end; lam=lam+step){
+        ## Constants
+        wavelength = lam; # central wavelength 
+        modes = 100; # number of modes to study
+        block_length = 7;
+        block_width = 7;
+        
+        
+        switchtolayout;
+        deleteall;
+
+        RING = {
+            "etch_depth": 0.07,
+            "innerradius": inner_radius,
+            "outerradius": outer_radius,
+            "matname": "etch"
+        };
+
+        WG = {
+            "length": block_length,
+            "width": block_width,
+            "height": 0.22,
+            "matname": "Si3N4 (Silicon Nitride) - Luke"
+        };
+
+        BOX = {
+            "length": block_length,
+            "width": block_width,
+            "height": 3,
+            "matname": "SiO2 (Glass) - Palik"
+        };
+
+        SUB = {
+            "length": block_length,
+            "width": block_width,
+            "height": 1,
+            "matname": "Si (Silicon) - Palik"
+        };
+
+        ## make the stack including the scattering ring
+        function_make_wg;
+        make_WG_structure(RING, WG, BOX, SUB);
+
+        ## Set up FDE solver
+        addfde;
+        set('solver type', '2D Z normal');
+        solver_height = (SUB.height + BOX.height + WG.height - 0.5 * RING.etch_depth) * 1e-6;
+        coordinates = {
+            'x': 0,
+            'x span': block_length * 1e-6,
+            'y': 0,
+            'y span': block_width * 1e-6,
+            'z': solver_height};
+        set(coordinates);
+        set('mesh cells x', 500);
+        set('x min bc', "PML");
+        set('x max bc', "PML");
+        set('y min bc', "PML");
+        set('y max bc', "PML");
+        set("wavelength", wavelength * 1e-6);
+        set("number of trial modes", modes);
+
+        select('FDE');
+        disc_numx = get('mesh cells x');
+        disc_numy = get('mesh cells y');
+        neff = matrix(1, modes);
+        # E_abs = matrix(modes, disc_numy + 1, 1, 1);
+
+        n = findmodes; # starts simulation
+
+        # create empty arrays
+        if (lam==lam_begin){
+            lams = matrix(1, num_elements);
+            neffs = matrix(modes, num_elements);
+            TE_pol_fractions = matrix(modes, num_elements);
+            # Exy = matrix(modes, disc_numx, disc_numy, num_elements);
+            }   
+
+        for(jdx=1:modes){
+        neff(1,jdx)= getdata('FDE::data::mode'+num2str(jdx),'neff');
+        E = getresult('FDE::data::mode'+num2str(jdx),'E');
+        TE_pol_fraction = getresult('FDE::data::mode'+num2str(jdx),'TE polarization fraction');        
+        # safe data
+        neffs(jdx, i) = neff(jdx);
+        TE_pol_fractions(jdx, i) = TE_pol_fraction;                          
+        }
+        ?neff;
+        ## Save current width
+        lams(i) = lam;
+        
+        # show counter
+        ?i;
+        ?num_elements;
+        i = i+1;
+          
+    }
+    # safe when done sweeping
+    all_results.lams = lams;
+    all_results.neff = neffs;
+    all_results.TE_pol_fraction = TE_pol_fractions;
+    matlabsave(results_filename, all_results);
+}
+
+# -- Set your desired sweep range and step
+inner_radius = 0.700;
+outer_radius = 1.250;
+lam_begin = 0.530;
+lam_end = 0.750;
+step = 0.01;
+results_filename = "results_lam_sweep_Si3N4-WG_700nm-inner-radius_1250nm-outer-radius_visible.mat";
+
+sweep_ring_params(lam_begin, lam_end, step, inner_radius, outer_radius, results_filename);
