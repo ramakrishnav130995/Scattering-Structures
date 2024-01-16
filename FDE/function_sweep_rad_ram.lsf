@@ -1,0 +1,43 @@
+switchtolayout;
+clc;
+clear;
+
+wavelength = 1.55;
+modes = 10;
+
+inner_rad = 0;
+outer_rad = 1.4;
+
+excess = 7; #2*outer_rad;
+
+solver_height = 0.5 * 1e-6;
+
+setnamed('RING','outer radius',outer_rad*1e-6);
+setnamed('RING','inner radius',inner_rad*1e-6);
+
+setnamed('FDE','x',0);
+setnamed('FDE','y',0);
+setnamed('FDE','x span',(excess)*1e-6);
+setnamed('FDE','y span',(excess)*1e-6);
+
+
+select('FDE');
+set("wavelength", wavelength * 1e-6);
+set("number of trial modes", modes);
+disc_numx = get('mesh cells x');
+disc_numy = get('mesh cells y');
+
+# E_abs = matrix(modes, disc_numy + 1, 1, 1);
+
+n = findmodes; # starts simulation
+
+neff = matrix(1, n);
+
+for(jdx=1:n){
+    
+neff(1,jdx)= getdata('FDE::data::mode'+num2str(jdx),'neff');
+E = getresult('FDE::data::mode'+num2str(jdx),'E');
+TE_pol_fraction = getresult('FDE::data::mode'+num2str(jdx),'TE polarization fraction');                          
+}
+  
+plot(1:n,abs(neff),"modes","neff"," ", "plot type=point, color=blue, pen=--, linewidth=2");

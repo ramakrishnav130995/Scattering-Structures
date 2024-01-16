@@ -54,33 +54,26 @@ class ScatteringStructure:
     # ---------------------------------------
 
     def create_rectangular_pattern(self):
-<<<<<<< Updated upstream
-        min_x = -0.5*self.geometry['lx']
-        max_x = +0.5*self.geometry['lx']
-        min_y = -0.5*self.geometry['ly']
-        max_y = +0.5*self.geometry['ly']
-        dist = self.arrangement['dist']
-        positions = np.array([(x, y)
-                              for x in np.arange(min_x + self.scatterer_radius, max_x - self.scatterer_radius,
-                                                 step=dist)
-                              for y in np.arange(min_y + self.scatterer_radius, max_y - self.scatterer_radius,
-                                                 step=dist)])
-=======
-        max_x = self.geometry["lx"]
-        max_y = self.geometry["ly"]
+        min_x = -0.5 * self.geometry["lx"]
+        max_x = +0.5 * self.geometry["lx"]
+        min_y = -0.5 * self.geometry["ly"]
+        max_y = +0.5 * self.geometry["ly"]
         dist = self.arrangement["dist"]
         positions = np.array(
             [
                 (x, y)
                 for x in np.arange(
-                    0 + self.scatterer_radius, max_x - self.scatterer_radius, step=dist
+                    min_x + self.scatterer_radius,
+                    max_x - self.scatterer_radius,
+                    step=dist,
                 )
                 for y in np.arange(
-                    0 + self.scatterer_radius, max_y - self.scatterer_radius, step=dist
+                    min_y + self.scatterer_radius,
+                    max_y - self.scatterer_radius,
+                    step=dist,
                 )
             ]
         )
->>>>>>> Stashed changes
 
         return positions
 
@@ -334,8 +327,10 @@ class ScatteringStructure:
         x, y = zip(*self.points)
 
         # Create a scatter plot with marker size
-        plt.scatter(x, y, s=np.pi * self.scatterer_radius**2)
-
+        if self.scatterer_radius > 0.5:
+            plt.scatter(x, y, s=np.pi * self.scatterer_radius**2)
+        else:
+            plt.scatter(x, y, s=1)  # To make point particles visible
         # Set aspect ratio to equal
         plt.gca().set_aspect("equal")
         plt.xlabel("μm")

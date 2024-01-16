@@ -1,0 +1,92 @@
+Ansys Lumerical 2023 R1.3 FDTD Solver Version 8.29.3401 (Windows 64bit)
+ expires (month/day/year): 1/31/2024
+using config file: Ansys Licensing set with ANSYSLMD_LICENSE_FILE
+license host: 1055@ansyslm.vpn.pixelphotonics.com
+current time: Thu Jan 11 15:44:15 2024
+Running on host: LAPTOP-LUGNJ2M3
+host available memory (GB): 21.794705
+All processes are communicating and ready to proceed to simulation...
+Running fsp file: C:\Program Files\Lumerical\v231\bin\fdtd-engine-msmpi.exe -t 1 -remote -shared-solve-license QU5TWVNfTElDRU5TSU5HX0NPTlRFWFRfREFUQT08QU5TWVNfTElDRU5TSU5HX0NPTlRFWFRfREFUQT48SUQ+Zjc0ZGFjNTktYTA3YS00ZDAyLWE5MDEtYTNiNDVmMjgyODFkPC9JRD48VFlQRT5IUENfUEFSQU1FVFJJQzwvVFlQRT48TkFNRT5IUEMgUGFyYW1ldHJpYzwvTkFNRT48SEFORExFUj42NDM5OEBMQVBUT1AtTFVHTkoyTTM8L0hBTkRMRVI+PC9BTlNZU19MSUNFTlNJTkdfQ09OVEVYVF9EQVRBPgo= C:/Users/RamakrishnaVenkitakr/OneDrive - Pixel Photonics GmbH/codes/Scattering-Structures/RCWA/photonic_crystal_sclab_example/Ram_pc_slab_fdtd.fsp
+number of processors is 4
+processors are distributed as: 1x1x4
+Running 3D Simulation
+Starting meshing
+Simulation size in gridpoints: 46 x 46 x 29
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 0 seconds of CPU time
+0 0
+Starting meshing
+Simulation size in gridpoints: 46 x 46 x 29
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 0.015625 seconds of CPU time
+0 0
+Starting meshing
+Simulation size in gridpoints: 46 x 46 x 29
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 0 seconds of CPU time
+0 0
+finished material properties
+Meshing Time: 0.0156368 seconds, Init Electrical Material Time: 0.0027489 seconds, Init Magnetic Material Time: 4.65e-05
+Using selected optimization level: 2
+Selecting 3d kernel for splitFieldDirection=0 and optLevel=2
+-----------------------------------------
+Beginning initialization of 3D Simulation
+Starting to add sources to simulation
+Adding 3D Gaussian source propagating in Z
+Starting to add boundary conditions to simulation
+Adding 3D Periodic BC
+Adding 3D Periodic BC
+Adding 3D Periodic BC
+Adding 3D Periodic BC
+Adding 3D PML BC
+Adding 3D Parallel BC
+Starting to add monitors to Simulation
+Adding analysis monitor
+Adding 3D DFT monitor
+Adding 3D DFT monitor
+Finished initialization of 3D Simulation
+-----------------------------------------
+All processes are communicating and ready to proceed to simulation...
+Starting 11539 total iterations
+0.41598% complete. Elapsed simulation time: 4.1598e-15 secs. Max time remaining: 28 secs. Auto Shutoff: 1
+2.0799% complete. Elapsed simulation time: 2.0799e-14 secs. Max time remaining: 27 secs. Auto Shutoff: 1
+4.29846% complete. Elapsed simulation time: 4.29846e-14 secs. Max time remaining: 26 secs. Auto Shutoff: 1
+8.73558% complete. Elapsed simulation time: 8.73558e-14 secs. Max time remaining: 24 secs. Auto Shutoff: 0.495341
+13.1727% complete. Elapsed simulation time: 1.31727e-13 secs. Max time remaining: 23 secs. Auto Shutoff: 0.283722
+17.6098% complete. Elapsed simulation time: 1.76098e-13 secs. Max time remaining: 22 secs. Auto Shutoff: 0.126172
+22.0469% complete. Elapsed simulation time: 2.20469e-13 secs. Max time remaining: 21 secs. Auto Shutoff: 0.168368
+26.4841% complete. Elapsed simulation time: 2.64841e-13 secs. Max time remaining: 19 secs. Auto Shutoff: 0.128129
+30.9212% complete. Elapsed simulation time: 3.09212e-13 secs. Max time remaining: 18 secs. Auto Shutoff: 0.0825563
+35.3583% complete. Elapsed simulation time: 3.53583e-13 secs. Max time remaining: 17 secs. Auto Shutoff: 0.0602217
+39.7954% complete. Elapsed simulation time: 3.97954e-13 secs. Max time remaining: 16 secs. Auto Shutoff: 0.068085
+44.2325% complete. Elapsed simulation time: 4.42325e-13 secs. Max time remaining: 15 secs. Auto Shutoff: 0.0531165
+48.6697% complete. Elapsed simulation time: 4.86697e-13 secs. Max time remaining: 14 secs. Auto Shutoff: 0.0465533
+53.1068% complete. Elapsed simulation time: 5.31068e-13 secs. Max time remaining: 12 secs. Auto Shutoff: 0.0277875
+57.5439% complete. Elapsed simulation time: 5.75439e-13 secs. Max time remaining: 11 secs. Auto Shutoff: 0.0371339
+61.981% complete. Elapsed simulation time: 6.1981e-13 secs. Max time remaining: 10 secs. Auto Shutoff: 0.0245133
+66.4181% complete. Elapsed simulation time: 6.64181e-13 secs. Max time remaining: 9 secs. Auto Shutoff: 0.0336932
+70.8553% complete. Elapsed simulation time: 7.08553e-13 secs. Max time remaining: 8 secs. Auto Shutoff: 0.0202608
+75.2924% complete. Elapsed simulation time: 7.52924e-13 secs. Max time remaining: 7 secs. Auto Shutoff: 0.0218257
+79.7295% complete. Elapsed simulation time: 7.97295e-13 secs. Max time remaining: 5 secs. Auto Shutoff: 0.0231164
+84.1666% complete. Elapsed simulation time: 8.41666e-13 secs. Max time remaining: 4 secs. Auto Shutoff: 0.022903
+88.6037% complete. Elapsed simulation time: 8.86037e-13 secs. Max time remaining: 3 secs. Auto Shutoff: 0.0134142
+93.0409% complete. Elapsed simulation time: 9.30409e-13 secs. Max time remaining: 2 secs. Auto Shutoff: 0.0113034
+97.478% complete. Elapsed simulation time: 9.7478e-13 secs. Max time remaining: 1 secs. Auto Shutoff: 0.0149544
+99.9999% complete. Elapsed simulation time: 9.99999e-13 secs. Max time remaining: 0 secs. Auto Shutoff: 0.0111857
+Completed 11539 iterations, or 9.999985e-13s of Simulation Time
+Process 0 starting to collect data
+    collecting monitor data
+    collecting source data
+Finished collecting data
+Simulation completed successfully at: Thu Jan 11 15:44:42 2024
+Overall wall time measurements in seconds: 28.0909
+    time to mesh and initialize: 0.607798
+    time to run FDTD simulation: 26.6472
+    time to checkpoint simulation: 2e-07
+    time to finalize data and save to files: 0.0226566
+    miscellaneous time: 0.813205
+    FDTD solver speed on process 0: 26.5724 Mnodes/s
+    total FDTD solver speed on 4 processes: 106.289 Mnodes/s
